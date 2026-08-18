@@ -262,6 +262,14 @@
   .field input::placeholder{color:rgba(237,230,214,0.28);}
   .field input:focus{border-bottom-color:var(--gold);}
 
+  .field input[type="time"]{
+    color-scheme: dark;
+  }
+  .field input[type="time"]::-webkit-calendar-picker-indicator{
+    filter: invert(76%) sepia(24%) saturate(482%) hue-rotate(358deg) brightness(92%) contrast(88%);
+    cursor:pointer;
+  }
+
   .avail-label{
     font-size:10.5px;
     letter-spacing:2.5px;
@@ -299,6 +307,35 @@
   }
   .avail-btn:hover{border-color:var(--gold);}
   .avail-btn.selected{
+    border-color:var(--gold);
+    background:rgba(198,166,100,0.1);
+    box-shadow:0 0 0 1px var(--gold) inset;
+  }
+
+  .time-btn{
+    flex:1;
+    padding:16px 8px;
+    background:transparent;
+    border:1px solid rgba(198,166,100,0.35);
+    color:var(--ivory);
+    font-family:'Cormorant Garamond', serif;
+    font-size:19px;
+    letter-spacing:1px;
+    cursor:pointer;
+    transition:all 0.3s ease;
+    text-align:center;
+  }
+  .time-btn .sub{
+    display:block;
+    font-family:'Jost',sans-serif;
+    font-size:9.5px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    margin-top:4px;
+    opacity:0.6;
+  }
+  .time-btn:hover{border-color:var(--gold);}
+  .time-btn.selected{
     border-color:var(--gold);
     background:rgba(198,166,100,0.1);
     box-shadow:0 0 0 1px var(--gold) inset;
@@ -422,11 +459,11 @@
       <div class="monogram">Reserved &amp; Select</div>
       <h1>You're&nbsp;Invited</h1>
       <div class="divider"></div>
-      <p class="lede">A private evening, held exclusively for our partners. We would be honoured by your presence kindly confirm below.</p>
+      <p class="lede">An Exclusive evening, held exclusively for our partners. We would be honoured by your presence kindly confirm below.</p>
 
       <div class="details">
         <div>24 &amp; 25 August<span>Choose your date</span></div>
-        <div>Evening<span>Venue: Downtown, Dubai</span></div>
+        <div>Evening<span>Attire: Black Tie</span></div>
       </div>
 
       <form id="rsvpForm">
@@ -451,6 +488,16 @@
         <div class="avail-options">
           <button type="button" class="avail-btn" data-date="24th August">24<span class="sub">August</span></button>
           <button type="button" class="avail-btn" data-date="25th August">25<span class="sub">August</span></button>
+        </div>
+
+        <div class="field">
+          <label for="time">Preferred Time</label>
+          <input type="time" id="time" required>
+        </div>
+
+        <div class="field">
+          <label for="pax">Number of Pax</label>
+          <input type="number" id="pax" min="1" max="10" placeholder="e.g. 2" required>
         </div>
 
         <div class="error-msg" id="errorMsg"></div>
@@ -494,9 +541,19 @@
     });
   });
 
+
+
   const form = document.getElementById('rsvpForm');
   const errorMsg = document.getElementById('errorMsg');
   const submitBtn = document.getElementById('submitBtn');
+
+  function formatTime(hhmm){
+    if(!hhmm) return '';
+    const [h, m] = hhmm.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 === 0 ? 12 : h % 12;
+    return `${hour12}:${String(m).padStart(2,'0')} ${period}`;
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -506,8 +563,10 @@
     const company = document.getElementById('company').value.trim();
     const contact = document.getElementById('contact').value.trim();
     const email = document.getElementById('email').value.trim();
+    const pax = document.getElementById('pax').value.trim();
+    const timeRaw = document.getElementById('time').value; // "HH:MM" 24-hour, or "" if empty
 
-    if(!name || !company || !contact || !email){
+    if(!name || !company || !contact || !email || !pax || !timeRaw){
       errorMsg.textContent = 'Please complete every field.';
       return;
     }
@@ -516,12 +575,15 @@
       return;
     }
 
+    const selectedTime = formatTime(timeRaw);
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'Confirming…';
 
     const entry = {
-      name, company, contact, email,
+      name, company, contact, email, pax,
       date: selectedDate,
+      time: selectedTime,
       submittedAt: new Date().toISOString()
     };
 
@@ -550,7 +612,7 @@
     }
 
     document.getElementById('confirmText').textContent =
-      `Thank you, ${name}. Your place has been reserved for the ${selectedDate} gathering. A confirmation will reach you at ${email}.`;
+      `Thank you, ${name}. Your place has been reserved for the ${selectedDate} gathering at ${selectedTime}, for ${pax} pax. A confirmation will reach you at ${email}.`;
 
     document.getElementById('formView').style.display = 'none';
     document.getElementById('confirmView').classList.add('show');
